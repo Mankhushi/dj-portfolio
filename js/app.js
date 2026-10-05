@@ -28,6 +28,12 @@
  * (e) CSS: all :root vars, keyframes (fadeInUp, fadeIn, waveAnim,
  *     floatParticle, load, rotateBg, pulse, popIn, scrollLine),
  *     breakpoints 1024px / 768px / 480px — all defined.
+ *
+ * ITERATION 2 FIXES (review.json findings — all blocking):
+ *   - fa-rings-wedding (Pro-only) → fa-ring  [booking services, Weddings & Receptions]
+ *   - fa-glass-cheers  (FA5 name)  → fa-champagne-glasses  [booking services, Private Parties]
+ *   - fa-expand-alt    (FA5 name)  → fa-expand  [all 12 gallery overlay divs]
+ *   All three replaced in index.html; no other files changed.
  * ============================================================
  */
 
