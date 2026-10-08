@@ -308,7 +308,7 @@ class PortfolioHandler(SimpleHTTPRequestHandler):
 
 # ── Entry point ───────────────────────────────────────────────────────
 if __name__ == '__main__':
-    PORT   = 7800
+    PORT   = int(os.environ.get('PORT', 7800))
     server = HTTPServer(('', PORT), PortfolioHandler)
 
     print('\n  \033[35m♫  KHUSHISOUNDLAB — Portfolio Server\033[0m')
