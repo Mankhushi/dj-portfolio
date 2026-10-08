@@ -1,0 +1,10 @@
+# Kiro agent internal files
+.agents/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc

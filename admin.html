@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — KHUSHISOUNDLAB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* ── Variables ─────────────────────────────────────────────────── */
+    :root {
+      --bg:          #050505;
+      --bg2:         #0a0a0f;
+      --bg3:         #0f0f1a;
+      --pink:        #FF0066;
+      --purple:      #9900FF;
+      --gold:        #FFB800;
+      --glass:       rgba(255,255,255,0.04);
+      --border:      rgba(255,255,255,0.08);
+      --grad:        linear-gradient(135deg,#FF0066,#9900FF);
+      --grad-gold:   linear-gradient(135deg,#FFB800,#FF6600);
+      --text:        #fff;
+      --muted:       rgba(255,255,255,0.45);
+      --radius:      14px;
+      --trans:       0.25s ease;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────── */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}
+    body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg2)}
+    ::-webkit-scrollbar-thumb{background:var(--grad);border-radius:2px}
+    button,input{font-family:'Montserrat',sans-serif}
+
+    /* ── Utility ───────────────────────────────────────────────────── */
+    .hidden{display:none!important}
+    .grad-text{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .gold-text{color:var(--gold)}
+
+    /* ══════════════════════════════════════════════════════════════
+       LOGIN SCREEN
+    ══════════════════════════════════════════════════════════════ */
+    #login-screen{
+      position:fixed;inset:0;z-index:9999;
+      background:var(--bg);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .login-card{
+      background:var(--glass);
+      backdrop-filter:blur(30px);
+      border:1px solid rgba(255,0,102,0.2);
+      border-radius:24px;
+      padding:52px 48px;
+      width:100%;max-width:420px;
+      text-align:center;
+      box-shadow:0 0 60px rgba(255,0,102,0.1),0 40px 80px rgba(0,0,0,0.6);
+    }
+    .login-logo{height:90px;width:auto;margin-bottom:20px;
+      filter:drop-shadow(0 0 12px rgba(255,0,102,0.5))}
+    .login-title{
+      font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;
+      letter-spacing:4px;text-transform:uppercase;
+      background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      margin-bottom:6px;
+    }
+    .login-sub{font-size:0.72rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+    .login-field{position:relative;margin-bottom:16px}
+    .login-field i{
+      position:absolute;left:16px;top:50%;transform:translateY(-50%);
+      color:var(--muted);font-size:0.85rem;
+    }
+    .login-input{
+      width:100%;padding:14px 16px 14px 42px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid var(--border);border-radius:10px;
+      color:var(--text);font-size:0.9rem;outline:none;
+      transition:border var(--trans),box-shadow var(--trans);
+    }
+    .login-input:focus{border-color:rgba(255,0,102,0.5);box-shadow:0 0 16px rgba(255,0,102,0.15)}
+    .login-input::placeholder{color:rgba(255,255,255,0.2)}
+    .login-btn{
+      width:100%;padding:14px;margin-top:4px;
+      background:var(--grad);border:none;border-radius:50px;
+      color:#fff;font-size:0.82rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+      cursor:pointer;transition:all var(--trans);
+      box-shadow:0 0 20px rgba(255,0,102,0.35);
+    }
+    .login-btn:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(255,0,102,0.55)}
+    .login-error{
+      margin-top:12px;font-size:0.78rem;color:#ff4d6d;
+      display:none;
+    }
+    .login-error.show{display:block}
+
+    /* ══════════════════════════════════════════════════════════════
+       MAIN ADMIN LAYOUT
+    ══════════════════════════════════════════════════════════════ */
+    #admin-app{display:none;flex-direction:column;min-height:100vh}
+    #admin-app.visible{display:flex}
+
+    /* ── Top bar ─────────────────────────────────────────────────── */
+    .topbar{
+      position:sticky;top:0;z-index:100;
+      background:rgba(5,5,5,0.92);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,0,102,0.15);
+      padding:14px 32px;
+      display:flex;align-items:center;justify-content:space-between;gap:16px;
+    }
+    .topbar-logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+    .topbar-logo img{height:44px;filter:drop-shadow(0 0 8px rgba(255,0,102,0.4))}
+    .topbar-label{
+      font-family:'Orbitron',sans-serif;font-size:0.65rem;font-weight:700;
+      letter-spacing:3px;text-transform:uppercase;color:var(--muted);
+    }
+    .topbar-actions{display:flex;align-items:center;gap:10px}
+    .topbar-btn{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:9px 18px;border-radius:50px;font-size:0.72rem;font-weight:600;
+      letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;
+      border:1px solid var(--border);background:var(--glass);color:var(--muted);
+      text-decoration:none;transition:all var(--trans);
+    }
+    .topbar-btn:hover{border-color:var(--pink);color:#fff;box-shadow:0 0 14px rgba(255,0,102,0.2)}
+    .logout-btn{border-color:rgba(255,0,102,0.3);color:rgba(255,0,102,0.7)}
+    .logout-btn:hover{background:rgba(255,0,102,0.1);color:var(--pink)}
+
+    /* ── Main content ────────────────────────────────────────────── */
+    .admin-main{flex:1;padding:36px 32px;max-width:1200px;margin:0 auto;width:100%}
+
+    /* ── Stats bar ───────────────────────────────────────────────── */
+    .stats-bar{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+      margin-bottom:36px;
+    }
+    .stat-card{
+      background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);
+      padding:22px 24px;display:flex;align-items:center;gap:16px;
+      transition:all var(--trans);
+    }
+    .stat-card:hover{border-color:rgba(255,0,102,0.3);box-shadow:0 0 20px rgba(255,0,102,0.08)}
+    .stat-icon{
+      width:46px;height:46px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;
+    }
+    .stat-icon.pink{background:rgba(255,0,102,0.15);color:var(--pink)}
+    .stat-icon.purple{background:rgba(153,0,255,0.15);color:#CC00FF}
+    .stat-icon.gold{background:rgba(255,184,0,0.15);color:var(--gold)}
+    .stat-info{}
+    .stat-count{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;line-height:1}
+    .stat-label{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+    .stat-size{font-size:0.7rem;color:var(--muted);margin-top:2px}
+
+    /* ── Tabs ────────────────────────────────────────────────────── */
+    .tabs{
+      display:flex;gap:4px;margin-bottom:28px;
+      background:rgba(255,255,255,0.03);border:1px solid var(--border);
+      border-radius:50px;padding:4px;width:fit-content;
+    }
+    .tab-btn{
+      padding:10px 28px;border-radius:50px;font-size:0.73rem;font-weight:600;
+      letter-spacing:2px;text-transform:uppercase;cursor:pointer;
+      background:none;border:none;color:var(--muted);transition:all var(--trans);
+      display:flex;align-items:center;gap:8px;
+    }
+    .tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 0 18px rgba(255,0,102,0.3)}
+    .tab-btn:hover:not(.active){color:#fff}
+
+    /* ── Upload zone ─────────────────────────────────────────────── */
+    .upload-zone{
+      border:2px dashed rgba(255,0,102,0.25);border-radius:20px;
+      padding:48px 24px;text-align:center;cursor:pointer;
+      background:rgba(255,0,102,0.02);
+      transition:all var(--trans);margin-bottom:32px;
+      position:relative;
+    }
+    .upload-zone.drag-over{
+      border-color:var(--pink);background:rgba(255,0,102,0.07);
+      box-shadow:0 0 40px rgba(255,0,102,0.15);
+    }
+    .upload-icon{font-size:2.8rem;margin-bottom:14px;opacity:0.5}
+    .upload-title{font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;letter-spacing:2px;margin-bottom:8px}
+    .upload-hint{font-size:0.8rem;color:var(--muted);margin-bottom:20px;line-height:1.6}
+    .upload-btn{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:12px 28px;border-radius:50px;
+      background:var(--grad);border:none;color:#fff;
+      font-size:0.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+      cursor:pointer;transition:all var(--trans);
+      box-shadow:0 0 18px rgba(255,0,102,0.3);
+    }
+    .upload-btn:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(255,0,102,0.5)}
+    #file-input{display:none}
+
+    /* ── Progress ────────────────────────────────────────────────── */
+    .upload-progress{
+      display:none;margin-top:16px;
+      background:rgba(255,255,255,0.05);border-radius:50px;overflow:hidden;height:6px;
+    }
+    .upload-progress.active{display:block}
+    .progress-fill{
+      height:100%;width:0;border-radius:50px;
+      background:var(--grad);
+      transition:width 0.3s ease;
+      box-shadow:0 0 10px rgba(255,0,102,0.6);
+    }
+    .upload-status{font-size:0.78rem;color:var(--muted);margin-top:10px;min-height:20px}
+    .upload-status.success{color:#44cc88}
+    .upload-status.error{color:#ff4d6d}
+
+    /* ── Files grid ──────────────────────────────────────────────── */
+    .section-heading{
+      font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;
+      letter-spacing:4px;text-transform:uppercase;color:var(--muted);
+      margin-bottom:18px;display:flex;align-items:center;gap:12px;
+    }
+    .section-heading::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    .files-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:16px;
+    }
+    .files-grid.songs-grid{
+      grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    }
+    .file-card{
+      background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);
+      overflow:hidden;transition:all var(--trans);position:relative;
+    }
+    .file-card:hover{border-color:rgba(255,0,102,0.35);transform:translateY(-3px);
+      box-shadow:0 12px 30px rgba(0,0,0,0.4),0 0 15px rgba(255,0,102,0.1)}
+
+    /* Photo card */
+    .photo-thumb{
+      width:100%;aspect-ratio:1;object-fit:cover;display:block;
+      filter:brightness(0.9);transition:filter var(--trans);
+    }
+    .file-card:hover .photo-thumb{filter:brightness(1.05)}
+
+    /* Video card */
+    .video-thumb{
+      width:100%;aspect-ratio:16/9;object-fit:cover;display:block;
+      background:var(--bg3);
+    }
+    .video-play-overlay{
+      position:absolute;top:0;left:0;right:0;
+      height:calc(100% - 72px);
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,0.35);opacity:0;transition:opacity var(--trans);
+    }
+    .file-card:hover .video-play-overlay{opacity:1}
+    .video-play-overlay i{font-size:2.5rem;color:#fff;filter:drop-shadow(0 0 8px rgba(255,0,102,0.8))}
+
+    /* Song card */
+    .song-card-inner{padding:18px}
+    .song-icon{
+      width:52px;height:52px;border-radius:12px;background:var(--grad);
+      display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+      margin-bottom:12px;box-shadow:0 0 16px rgba(255,0,102,0.35);
+    }
+    .song-audio{
+      width:100%;height:32px;margin:10px 0;
+      accent-color:var(--pink);outline:none;
+    }
+    audio::-webkit-media-controls-panel{background:rgba(255,255,255,0.05)}
+
+    /* Card footer */
+    .file-card-footer{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .file-name{
+      font-size:0.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      color:rgba(255,255,255,0.8);flex:1;
+    }
+    .file-size{font-size:0.65rem;color:var(--muted);white-space:nowrap}
+    .delete-btn{
+      width:28px;height:28px;border-radius:50%;
+      background:rgba(255,50,80,0.12);border:1px solid rgba(255,50,80,0.2);
+      color:rgba(255,80,100,0.7);font-size:0.7rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:all var(--trans);flex-shrink:0;
+    }
+    .delete-btn:hover{background:rgba(255,50,80,0.25);border-color:rgba(255,50,80,0.5);color:#ff4d6d;transform:scale(1.1)}
+
+    /* Empty state */
+    .empty-state{
+      grid-column:1/-1;text-align:center;padding:60px 20px;
+      color:var(--muted);
+    }
+    .empty-state i{font-size:3rem;margin-bottom:16px;display:block;opacity:0.3}
+    .empty-state p{font-size:0.85rem;line-height:1.7}
+
+    /* Toast notification */
+    #toast{
+      position:fixed;bottom:28px;right:28px;z-index:99999;
+      padding:14px 22px;border-radius:12px;font-size:0.82rem;font-weight:600;
+      display:flex;align-items:center;gap:10px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.5);
+      transform:translateY(80px);opacity:0;
+      transition:all 0.35s cubic-bezier(0.23,1,0.32,1);
+      pointer-events:none;
+    }
+    #toast.show{transform:translateY(0);opacity:1}
+    #toast.success{background:#0d2b1f;border:1px solid #44cc88;color:#44cc88}
+    #toast.error  {background:#2b0d13;border:1px solid #ff4d6d;color:#ff4d6d}
+    #toast.info   {background:#0d0d2b;border:1px solid rgba(255,0,102,0.5);color:var(--pink)}
+
+    /* Modal (video preview) */
+    .modal-overlay{
+      position:fixed;inset:0;z-index:9998;
+      background:rgba(0,0,0,0.92);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;visibility:hidden;transition:all var(--trans);
+    }
+    .modal-overlay.open{opacity:1;visibility:visible}
+    .modal-content{position:relative;max-width:90vw;max-height:90vh}
+    .modal-content video{max-width:100%;max-height:80vh;border-radius:12px;display:block}
+    .modal-close{
+      position:absolute;top:-14px;right:-14px;
+      width:34px;height:34px;border-radius:50%;
+      background:var(--grad);border:none;color:#fff;font-size:0.85rem;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 0 16px rgba(255,0,102,0.5);
+    }
+
+    /* Responsive */
+    @media(max-width:768px){
+      .topbar{padding:12px 16px}
+      .admin-main{padding:20px 16px}
+      .stats-bar{grid-template-columns:1fr}
+      .tabs{overflow-x:auto;width:100%}
+      .tab-btn{padding:9px 18px;font-size:0.65rem}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <img src="logo.png" alt="KHUSHISOUNDLAB" class="login-logo" />
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">KHUSHISOUNDLAB</div>
+
+    <form id="login-form" autocomplete="off">
+      <div class="login-field">
+        <i class="fas fa-lock"></i>
+        <input id="password-input" type="password" class="login-input" placeholder="Enter password" autofocus />
+      </div>
+      <button type="submit" class="login-btn">
+        <i class="fas fa-sign-in-alt"></i>&nbsp; ENTER STUDIO
+      </button>
+      <div class="login-error" id="login-error">
+        <i class="fas fa-exclamation-circle"></i> Incorrect password. Try again.
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════ ADMIN APP ═══════════════════ -->
+<div id="admin-app">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <a href="index.html" class="topbar-logo" target="_blank">
+      <img src="logo.png" alt="KHUSHISOUNDLAB" />
+      <span class="topbar-label">Media Studio</span>
+    </a>
+    <div class="topbar-actions">
+      <a href="index.html" class="topbar-btn" target="_blank">
+        <i class="fas fa-external-link-alt"></i> View Portfolio
+      </a>
+      <button class="topbar-btn logout-btn" id="logout-btn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon pink"><i class="fas fa-image"></i></div>
+        <div class="stat-info">
+          <div class="stat-count grad-text" id="stat-photos">0</div>
+          <div class="stat-label">Photos</div>
+          <div class="stat-size" id="stat-photos-size">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="fas fa-video"></i></div>
+        <div class="stat-info">
+          <div class="stat-count grad-text" id="stat-videos">0</div>
+          <div class="stat-label">Videos</div>
+          <div class="stat-size" id="stat-videos-size">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold"><i class="fas fa-music"></i></div>
+        <div class="stat-info">
+          <div class="stat-count grad-text" id="stat-songs">0</div>
+          <div class="stat-label">Songs</div>
+          <div class="stat-size" id="stat-songs-size">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="photos">
+        <i class="fas fa-image"></i> Photos
+      </button>
+      <button class="tab-btn" data-tab="videos">
+        <i class="fas fa-video"></i> Videos
+      </button>
+      <button class="tab-btn" data-tab="songs">
+        <i class="fas fa-music"></i> Songs
+      </button>
+      <button class="tab-btn" data-tab="settings">
+        <i class="fas fa-sliders"></i> Settings
+      </button>
+    </div>
+
+    <!-- ── PHOTOS TAB ── -->
+    <div class="tab-panel" id="tab-photos">
+      <div class="upload-zone" id="drop-photos">
+        <div class="upload-icon">📸</div>
+        <div class="upload-title">Drop Photos Here</div>
+        <div class="upload-hint">
+          JPG, PNG, WEBP, GIF supported<br/>
+          Drag &amp; drop or click to browse
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('file-input-photos').click()">
+          <i class="fas fa-cloud-upload-alt"></i> Choose Photos
+        </button>
+        <input type="file" id="file-input-photos" accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+        <div class="upload-progress" id="prog-photos"><div class="progress-fill" id="progfill-photos"></div></div>
+        <div class="upload-status" id="status-photos"></div>
+      </div>
+      <div class="section-heading">Uploaded Photos</div>
+      <div class="files-grid" id="grid-photos"></div>
+    </div>
+
+    <!-- ── VIDEOS TAB ── -->
+    <div class="tab-panel hidden" id="tab-videos">
+      <div class="upload-zone" id="drop-videos">
+        <div class="upload-icon">🎬</div>
+        <div class="upload-title">Drop Videos Here</div>
+        <div class="upload-hint">
+          MP4, MOV, WEBM supported<br/>
+          Max file size: 500 MB
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('file-input-videos').click()">
+          <i class="fas fa-cloud-upload-alt"></i> Choose Videos
+        </button>
+        <input type="file" id="file-input-videos" accept=".mp4,.mov,.webm,.mkv" multiple />
+        <div class="upload-progress" id="prog-videos"><div class="progress-fill" id="progfill-videos"></div></div>
+        <div class="upload-status" id="status-videos"></div>
+      </div>
+      <div class="section-heading">Uploaded Videos</div>
+      <div class="files-grid" id="grid-videos"></div>
+    </div>
+
+    <!-- ── SONGS TAB ── -->
+    <div class="tab-panel hidden" id="tab-songs">
+      <div class="upload-zone" id="drop-songs">
+        <div class="upload-icon">🎵</div>
+        <div class="upload-title">Drop Songs / Mixes Here</div>
+        <div class="upload-hint">
+          MP3, WAV, OGG, AAC, FLAC, M4A supported<br/>
+          Upload your mixes, sets &amp; tracks
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('file-input-songs').click()">
+          <i class="fas fa-cloud-upload-alt"></i> Choose Songs
+        </button>
+        <input type="file" id="file-input-songs" accept=".mp3,.wav,.ogg,.aac,.flac,.m4a" multiple />
+        <div class="upload-progress" id="prog-songs"><div class="progress-fill" id="progfill-songs"></div></div>
+        <div class="upload-status" id="status-songs"></div>
+      </div>
+      <div class="section-heading">Uploaded Songs &amp; Mixes</div>
+      <div class="files-grid songs-grid" id="grid-songs"></div>
+    </div>
+
+    <!-- ── SETTINGS TAB ── -->
+    <div class="tab-panel hidden" id="tab-settings">
+
+      <div style="max-width:700px">
+
+        <!-- Stats group -->
+        <div class="section-heading">Stats (About Section)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px">
+
+          <div class="sfield">
+            <label class="slabel">Experience Value</label>
+            <input id="s-exp-val" type="number" class="sinput" placeholder="6" />
+            <label class="slabel" style="margin-top:8px">Label</label>
+            <input id="s-exp-lbl" type="text" class="sinput" placeholder="Months Experience" />
+          </div>
+
+          <div class="sfield">
+            <label class="slabel">Events Value</label>
+            <input id="s-evt-val" type="number" class="sinput" placeholder="4" />
+            <label class="slabel" style="margin-top:8px">Label</label>
+            <input id="s-evt-lbl" type="text" class="sinput" placeholder="Events Performed" />
+          </div>
+
+          <div class="sfield">
+            <label class="slabel">Audience Value</label>
+            <input id="s-aud-val" type="number" class="sinput" placeholder="500" />
+            <label class="slabel" style="margin-top:8px">Label</label>
+            <input id="s-aud-lbl" type="text" class="sinput" placeholder="Audience Reached" />
+          </div>
+
+        </div>
+
+        <!-- About bio -->
+        <div class="section-heading">About Bio</div>
+        <div class="sfield" style="margin-bottom:32px">
+          <label class="slabel">Your Bio Text</label>
+          <textarea id="s-bio" class="sinput" rows="4" placeholder="Write about yourself..."></textarea>
+          <label class="slabel" style="margin-top:12px">Based In (City)</label>
+          <input id="s-location" type="text" class="sinput" placeholder="Mumbai, India" />
+        </div>
+
+        <!-- Contact -->
+        <div class="section-heading">Contact Info</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px">
+          <div class="sfield">
+            <label class="slabel">Email</label>
+            <input id="s-email" type="email" class="sinput" placeholder="djkhushisoundlab@gmail.com" />
+          </div>
+          <div class="sfield">
+            <label class="slabel">WhatsApp Number</label>
+            <input id="s-whatsapp" type="text" class="sinput" placeholder="+91 6207803155" />
+          </div>
+          <div class="sfield">
+            <label class="slabel">Instagram URL</label>
+            <input id="s-instagram" type="url" class="sinput" placeholder="https://instagram.com/khushisoundlab" />
+          </div>
+          <div class="sfield">
+            <label class="slabel">Genres Line</label>
+            <input id="s-genres" type="text" class="sinput" placeholder="Electronic • Afro House • Tech House" />
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <button id="save-settings-btn" class="upload-btn" style="width:100%;justify-content:center;font-size:0.85rem;padding:16px">
+          <i class="fas fa-save"></i> SAVE CHANGES
+        </button>
+        <div id="settings-status" style="text-align:center;margin-top:12px;font-size:0.8rem;min-height:20px"></div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Video modal -->
+<div class="modal-overlay" id="video-modal">
+  <div class="modal-content">
+    <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+    <video id="modal-video" controls></video>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"><i class="fas fa-check-circle"></i> <span id="toast-msg"></span></div>
+
+<!-- ═══════════════════ JAVASCRIPT ═══════════════════ -->
+<script>
+  /* ── Config ───────────────────────────────────────────────── */
+  const PASSWORD   = 'khushi2026';   // ← change this password
+  const SESS_KEY   = 'ksl_admin';
+
+  /* ── DOM refs ─────────────────────────────────────────────── */
+  const loginScreen = document.getElementById('login-screen');
+  const adminApp    = document.getElementById('admin-app');
+  const loginForm   = document.getElementById('login-form');
+  const loginError  = document.getElementById('login-error');
+  const pwInput     = document.getElementById('password-input');
+
+  /* ── Auth ─────────────────────────────────────────────────── */
+  function checkAuth() {
+    if (sessionStorage.getItem(SESS_KEY) === '1') showApp();
+  }
+
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    if (pwInput.value === PASSWORD) {
+      sessionStorage.setItem(SESS_KEY, '1');
+      loginError.classList.remove('show');
+      showApp();
+    } else {
+      loginError.classList.add('show');
+      pwInput.value = '';
+      pwInput.focus();
+      document.querySelector('.login-card').style.animation = 'shake 0.4s ease';
+      setTimeout(() => document.querySelector('.login-card').style.animation = '', 400);
+    }
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem(SESS_KEY);
+    adminApp.classList.remove('visible');
+    loginScreen.style.display = 'flex';
+    pwInput.value = '';
+  });
+
+  function showApp() {
+    loginScreen.style.display = 'none';
+    adminApp.classList.add('visible');
+    loadStats();
+    loadGrid('photos');
+    loadGrid('videos');
+    loadGrid('songs');
+  }
+
+  /* ── Tabs ─────────────────────────────────────────────────── */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+    });
+  });
+
+  /* ── Stats ────────────────────────────────────────────────── */
+  async function loadStats() {
+    try {
+      const res  = await fetch('/api/stats');
+      const data = await res.json();
+      ['photos','videos','songs'].forEach(t => {
+        const s = data[t] || {};
+        document.getElementById(`stat-${t}`).textContent      = s.count || 0;
+        document.getElementById(`stat-${t}-size`).textContent = s.total_size || '—';
+      });
+    } catch(_) {}
+  }
+
+  /* ── Load file grid ───────────────────────────────────────── */
+  async function loadGrid(type) {
+    const grid = document.getElementById(`grid-${type}`);
+    try {
+      const res   = await fetch(`/api/files?type=${type}`);
+      const files = await res.json();
+      grid.innerHTML = '';
+      if (!files.length) {
+        grid.innerHTML = `<div class="empty-state">
+          <i class="fas fa-${type==='photos'?'images':type==='videos'?'film':'music'}"></i>
+          <p>No ${type} uploaded yet.<br>Use the upload area above to add ${type}.</p>
+        </div>`;
+        return;
+      }
+      files.forEach(f => grid.appendChild(buildCard(f, type)));
+    } catch(_) {
+      grid.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load files.<br>Make sure server.py is running.</p></div>`;
+    }
+  }
+
+  /* ── Build card ───────────────────────────────────────────── */
+  function buildCard(file, type) {
+    const card = document.createElement('div');
+    card.className = 'file-card';
+    card.dataset.url = file.url;
+
+    if (type === 'photos') {
+      card.innerHTML = `
+        <img class="photo-thumb" src="${file.url}" alt="${file.name}" loading="lazy" />
+        <div class="file-card-footer">
+          <span class="file-name" title="${file.name}">${file.name}</span>
+          <span class="file-size">${file.size_human}</span>
+          <button class="delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+        </div>`;
+    } else if (type === 'videos') {
+      card.innerHTML = `
+        <video class="video-thumb" preload="metadata" src="${file.url}#t=0.5"></video>
+        <div class="video-play-overlay"><i class="fas fa-play-circle"></i></div>
+        <div class="file-card-footer">
+          <span class="file-name" title="${file.name}">${file.name}</span>
+          <span class="file-size">${file.size_human}</span>
+          <button class="delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+        </div>`;
+      // Click to preview
+      card.querySelector('.video-play-overlay').addEventListener('click', () => openVideoModal(file.url));
+      card.querySelector('.video-thumb').addEventListener('click', () => openVideoModal(file.url));
+    } else {
+      card.innerHTML = `
+        <div class="song-card-inner">
+          <div class="song-icon"><i class="fas fa-music"></i></div>
+          <div class="file-name" title="${file.name}" style="margin-bottom:6px;max-width:100%">${file.name}</div>
+          <div class="file-size" style="margin-bottom:8px">${file.size_human}</div>
+          <audio class="song-audio" controls preload="none" src="${file.url}"></audio>
+        </div>
+        <div class="file-card-footer" style="border-top:1px solid var(--border);padding-top:10px">
+          <span></span>
+          <button class="delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+        </div>`;
+    }
+
+    // Delete handler
+    card.querySelector('.delete-btn').addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm(`Delete "${file.name}"?`)) return;
+      try {
+        const r = await fetch(`/api/delete/${type}/${encodeURIComponent(file.name)}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (d.success) {
+          card.style.transition = 'all 0.3s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.8)';
+          setTimeout(() => { card.remove(); loadStats(); }, 300);
+          showToast('File deleted', 'success');
+        } else {
+          showToast(d.error || 'Delete failed', 'error');
+        }
+      } catch(_) {
+        showToast('Server error', 'error');
+      }
+    });
+
+    return card;
+  }
+
+  /* ── Upload engine ────────────────────────────────────────── */
+  function setupUpload(type) {
+    const zone     = document.getElementById(`drop-${type}`);
+    const fileInp  = document.getElementById(`file-input-${type}`);
+    const progBar  = document.getElementById(`prog-${type}`);
+    const progFill = document.getElementById(`progfill-${type}`);
+    const status   = document.getElementById(`status-${type}`);
+
+    // File input change
+    fileInp.addEventListener('change', () => uploadFiles(fileInp.files, type, progBar, progFill, status));
+
+    // Drag events
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over') });
+    zone.addEventListener('dragleave', e => { e.preventDefault(); zone.classList.remove('drag-over') });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files, type, progBar, progFill, status);
+    });
+  }
+
+  async function uploadFiles(files, type, progBar, progFill, status) {
+    const arr = [...files];
+    if (!arr.length) return;
+
+    progBar.classList.add('active');
+    status.className = 'upload-status';
+
+    for (let i = 0; i < arr.length; i++) {
+      const file = arr[i];
+      status.textContent = `Uploading ${i + 1}/${arr.length}: ${file.name}`;
+      progFill.style.width = `${Math.round((i / arr.length) * 100)}%`;
+
+      const form = new FormData();
+      form.append('type', type);
+      form.append('file', file);
+
+      try {
+        const res  = await fetch('/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!data.success) {
+          showToast(`${file.name}: ${data.error}`, 'error');
+        }
+      } catch (_) {
+        showToast(`Upload failed: ${file.name}`, 'error');
+      }
+    }
+
+    progFill.style.width = '100%';
+    status.textContent  = `✓ ${arr.length} file${arr.length > 1 ? 's' : ''} uploaded successfully`;
+    status.className    = 'upload-status success';
+    showToast(`${arr.length} file${arr.length > 1 ? 's' : ''} uploaded!`, 'success');
+
+    setTimeout(() => {
+      progBar.classList.remove('active');
+      progFill.style.width = '0';
+      status.textContent = '';
+    }, 3000);
+
+    loadGrid(type);
+    loadStats();
+
+    // Reset file input
+    document.getElementById(`file-input-${type}`).value = '';
+  }
+
+  /* ── Video modal ──────────────────────────────────────────── */
+  const modal      = document.getElementById('video-modal');
+  const modalVideo = document.getElementById('modal-video');
+  document.getElementById('modal-close').addEventListener('click', closeVideoModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeVideoModal(); });
+
+  function openVideoModal(url) {
+    modalVideo.src = url;
+    modal.classList.add('open');
+    modalVideo.play().catch(() => {});
+  }
+  function closeVideoModal() {
+    modal.classList.remove('open');
+    modalVideo.pause();
+    modalVideo.src = '';
+  }
+
+  /* ── Toast ────────────────────────────────────────────────── */
+  let toastTimer;
+  function showToast(msg, type = 'info') {
+    const toast = document.getElementById('toast');
+    const icon  = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' }[type];
+    toast.querySelector('i').className = `fas ${icon}`;
+    document.getElementById('toast-msg').textContent = msg;
+    toast.className = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.className = '', 3500);
+  }
+
+  /* ── Init ─────────────────────────────────────────────────── */
+  ['photos', 'videos', 'songs'].forEach(setupUpload);
+  checkAuth();
+
+  /* ── Shake animation ──────────────────────────────────────── */
+</script>
+<style>
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-6px)}
+    80%{transform:translateX(6px)}
+  }
+
+  /* Settings form */
+  .sfield { display:flex; flex-direction:column; gap:6px; }
+  .slabel {
+    font-size:0.65rem; letter-spacing:2px; text-transform:uppercase;
+    color:rgba(255,255,255,0.4); font-weight:600;
+  }
+  .sinput {
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:8px; padding:12px 14px;
+    color:#fff; font-family:'Montserrat',sans-serif; font-size:0.88rem;
+    outline:none; transition:border 0.2s ease, box-shadow 0.2s ease;
+    resize:vertical;
+  }
+  .sinput:focus {
+    border-color:rgba(255,0,102,0.5);
+    box-shadow:0 0 12px rgba(255,0,102,0.12);
+  }
+  .sinput::placeholder { color:rgba(255,255,255,0.2); }
+</style>
+</body>
+</html>
+
+<script>
+/* ── Settings Tab ─────────────────────────────────────────── */
+async function loadSettings() {
+  try {
+    const res  = await fetch('/api/settings');
+    const data = await res.json();
+    if (data.stats) {
+      const e = data.stats.experience || {};
+      const v = data.stats.events     || {};
+      const a = data.stats.audience   || {};
+      document.getElementById('s-exp-val').value = e.value ?? '';
+      document.getElementById('s-exp-lbl').value = e.label ?? '';
+      document.getElementById('s-evt-val').value = v.value ?? '';
+      document.getElementById('s-evt-lbl').value = v.label ?? '';
+      document.getElementById('s-aud-val').value = a.value ?? '';
+      document.getElementById('s-aud-lbl').value = a.label ?? '';
+    }
+    if (data.about) {
+      document.getElementById('s-bio').value      = data.about.bio      ?? '';
+      document.getElementById('s-location').value = data.about.location ?? '';
+    }
+    if (data.contact) {
+      document.getElementById('s-email').value     = data.contact.email     ?? '';
+      document.getElementById('s-whatsapp').value  = data.contact.whatsapp  ?? '';
+      document.getElementById('s-instagram').value = data.contact.instagram ?? '';
+    }
+    document.getElementById('s-genres').value = data.genres ?? '';
+  } catch(_) {}
+}
+
+document.getElementById('save-settings-btn').addEventListener('click', async () => {
+  const btn    = document.getElementById('save-settings-btn');
+  const status = document.getElementById('settings-status');
+
+  const payload = {
+    stats: {
+      experience: { value: Number(document.getElementById('s-exp-val').value)||0, suffix:'',  label: document.getElementById('s-exp-lbl').value },
+      events:     { value: Number(document.getElementById('s-evt-val').value)||0, suffix:'+', label: document.getElementById('s-evt-lbl').value },
+      audience:   { value: Number(document.getElementById('s-aud-val').value)||0, suffix:'+', label: document.getElementById('s-aud-lbl').value }
+    },
+    about:   { bio: document.getElementById('s-bio').value, location: document.getElementById('s-location').value },
+    contact: { email: document.getElementById('s-email').value, whatsapp: document.getElementById('s-whatsapp').value, instagram: document.getElementById('s-instagram').value },
+    genres:  document.getElementById('s-genres').value
+  };
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+  try {
+    const res  = await fetch('/api/settings', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) {
+      status.style.color = '#44cc88';
+      status.textContent = '✓ Saved! Refresh the portfolio page to see changes.';
+      showToast('Settings saved!', 'success');
+    } else {
+      status.style.color = '#ff4d6d';
+      status.textContent = data.error || 'Save failed.';
+    }
+  } catch(_) {
+    status.style.color = '#ff4d6d';
+    status.textContent = 'Could not save — is server.py running?';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-save"></i> SAVE CHANGES';
+  setTimeout(() => status.textContent = '', 6000);
+});
+
+// Auto-load settings when Settings tab is opened
+document.querySelectorAll('.tab-btn[data-tab="settings"]').forEach(btn => {
+  btn.addEventListener('click', loadSettings);
+});
+</script>

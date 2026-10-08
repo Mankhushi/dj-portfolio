@@ -1,0 +1,17 @@
+{
+  "stats": {
+    "experience": { "value": 6,   "suffix": "",  "label": "Months Experience" },
+    "events":     { "value": 4,   "suffix": "+", "label": "Events Performed"  },
+    "audience":   { "value": 500, "suffix": "+", "label": "Audience Reached"  }
+  },
+  "about": {
+    "bio": "Khushi is a DJ and music enthusiast creating energetic and unforgettable experiences through sound. From electronic and Afro House to Tech House and Bollywood, her sets are designed to connect people, create energy and keep the dance floor alive.",
+    "location": "Mumbai, India"
+  },
+  "contact": {
+    "email":     "djkhushisoundlab@gmail.com",
+    "whatsapp":  "+91 6207803155",
+    "instagram": "https://instagram.com/khushisoundlab"
+  },
+  "genres": "Electronic • Afro House • Tech House • Bollywood"
+}

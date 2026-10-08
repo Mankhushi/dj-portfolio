@@ -1,8 +1,8 @@
-/*
+﻿/*
  * ============================================================
  * VERIFICATION RECORD
  * Checked by: static file verification (no build step required)
- * Date: 2025 — first iteration build
+ * Date: 2026 — first iteration build
  *
  * (a) FILES: index.html, css/style.css, js/app.js — all created, non-empty.
  * (b) HTML LINKS: <link rel="stylesheet" href="css/style.css">,
@@ -323,173 +323,135 @@
    10. MUSIC PLAYER
    ============================================================ */
 (function initMusicPlayer() {
-  const playerEl    = document.querySelector('.featured-player');
+  const playerEl     = document.querySelector('.featured-player');
   const playPauseBtn = document.getElementById('playPauseBtn');
   const progressFill = document.getElementById('progressFill');
   const progressBar  = document.querySelector('.player-progress');
-  const progressThumb = document.querySelector('.player-progress-thumb');
+  const progressThumb= document.querySelector('.player-progress-thumb');
   const playerTime   = document.getElementById('playerTime');
   const volFill      = document.getElementById('volumeFill');
   const volSlider    = document.querySelector('.player-vol-slider');
   const waveformEl   = document.querySelector('.player-waveform');
+  const audio        = document.getElementById('featuredAudio');   // real audio
   if (!playPauseBtn || !waveformEl) return;
 
-  const TOTAL_BARS    = 60;
-  const PLAYED_RATIO  = 0.3; // 30% played initially
-  const TOTAL_SECONDS = 527; // 8:47
-
-  let isPlaying     = false;
-  let currentTime   = Math.round(TOTAL_SECONDS * PLAYED_RATIO); // ~158s
-  let progressInterval = null;
+  const TOTAL_BARS = 60;
 
   /* ---- Build waveform bars ---- */
   waveformEl.innerHTML = '';
   for (let i = 0; i < TOTAL_BARS; i++) {
     const bar = document.createElement('div');
     bar.classList.add('player-waveform-bar');
-    // Random height 10–50 px
-    const h = 10 + Math.floor(Math.random() * 40);
-    bar.style.height = h + 'px';
-    // Mark initial played/playing/unplayed state
-    const playedUpTo = Math.floor(TOTAL_BARS * PLAYED_RATIO);
-    if (i < playedUpTo - 1) {
-      bar.classList.add('played');
-    } else if (i === playedUpTo - 1) {
-      bar.classList.add('playing');
-    }
-    // Click to seek
+    bar.style.height = (10 + Math.floor(Math.random() * 40)) + 'px';
     bar.addEventListener('click', () => {
-      currentTime = Math.round((i / TOTAL_BARS) * TOTAL_SECONDS);
-      updatePlayerUI();
+      if (audio && audio.duration) {
+        audio.currentTime = (i / TOTAL_BARS) * audio.duration;
+        updatePlayerUI();
+      }
     });
     waveformEl.appendChild(bar);
   }
 
   /* ---- Helpers ---- */
-  function formatTime(s) {
+  function fmt(s) {
+    if (!s || isNaN(s)) return '0:00';
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   }
 
   function updatePlayerUI() {
-    const pct = (currentTime / TOTAL_SECONDS) * 100;
-    const barIndex = Math.floor((currentTime / TOTAL_SECONDS) * TOTAL_BARS);
+    const dur = (audio && audio.duration  && !isNaN(audio.duration))  ? audio.duration  : 0;
+    const cur = (audio && audio.currentTime) ? audio.currentTime : 0;
+    const pct = dur ? (cur / dur) * 100 : 0;
+    const barIndex = Math.floor((cur / (dur || 1)) * TOTAL_BARS);
 
-    // Progress bar fill
-    if (progressFill) progressFill.style.width = pct + '%';
+    if (progressFill)  progressFill.style.width = pct + '%';
+    if (progressThumb) progressThumb.style.left  = pct + '%';
+    if (playerTime)    playerTime.textContent = `${fmt(cur)} / ${fmt(dur)}`;
 
-    // Progress thumb
-    if (progressThumb) progressThumb.style.left = pct + '%';
-
-    // Time display
-    if (playerTime) {
-      playerTime.textContent = `${formatTime(currentTime)} / ${formatTime(TOTAL_SECONDS)}`;
-    }
-
-    // Waveform bars
     const bars = waveformEl.querySelectorAll('.player-waveform-bar');
     bars.forEach((bar, i) => {
       bar.classList.remove('played', 'playing');
-      if (i < barIndex) {
-        bar.classList.add('played');
-      } else if (i === barIndex) {
-        bar.classList.add('playing');
-      }
+      if (i < barIndex)       bar.classList.add('played');
+      else if (i === barIndex) bar.classList.add('playing');
     });
 
-    // ARIA
-    const progressBarEl = document.querySelector('.player-progress');
-    if (progressBarEl) progressBarEl.setAttribute('aria-valuenow', Math.round(pct));
+    if (progressBar) progressBar.setAttribute('aria-valuenow', Math.round(pct));
   }
 
-  function startPlaying() {
-    isPlaying = true;
-    playPauseBtn.innerHTML = '<i class="fas fa-pause" aria-hidden="true"></i>';
-    playPauseBtn.setAttribute('aria-label', 'Pause track');
-    playPauseBtn.setAttribute('aria-pressed', 'true');
-    if (playerEl) playerEl.classList.add('player-playing');
-
-    clearInterval(progressInterval);
-    progressInterval = setInterval(() => {
-      if (currentTime < TOTAL_SECONDS) {
-        currentTime++;
-        updatePlayerUI();
-      } else {
-        stopPlaying();
-        currentTime = 0;
-        updatePlayerUI();
-      }
-    }, 1000);
+  function setPlayingState(playing) {
+    playPauseBtn.innerHTML = playing
+      ? '<i class="fas fa-pause" aria-hidden="true"></i>'
+      : '<i class="fas fa-play"  aria-hidden="true"></i>';
+    playPauseBtn.setAttribute('aria-label',   playing ? 'Pause track' : 'Play track');
+    playPauseBtn.setAttribute('aria-pressed', String(playing));
+    if (playerEl) playerEl.classList.toggle('player-playing', playing);
   }
 
-  function stopPlaying() {
-    isPlaying = false;
-    playPauseBtn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i>';
-    playPauseBtn.setAttribute('aria-label', 'Play track');
-    playPauseBtn.setAttribute('aria-pressed', 'false');
-    if (playerEl) playerEl.classList.remove('player-playing');
-    clearInterval(progressInterval);
+  /* ---- Wire real audio to custom UI ---- */
+  if (audio) {
+    audio.volume = 0.7;
+    audio.addEventListener('loadedmetadata', updatePlayerUI);
+    audio.addEventListener('timeupdate',     updatePlayerUI);
+    audio.addEventListener('play',  () => setPlayingState(true));
+    audio.addEventListener('pause', () => setPlayingState(false));
+    audio.addEventListener('ended', () => { setPlayingState(false); updatePlayerUI(); });
   }
 
-  // Play/Pause toggle
+  /* ---- Play / Pause button ---- */
   playPauseBtn.addEventListener('click', () => {
-    if (isPlaying) stopPlaying();
-    else startPlaying();
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play().catch(err => console.warn('Play blocked:', err));
+    } else {
+      audio.pause();
+    }
   });
 
-  // Progress bar seek
-  if (progressBar) {
+  /* ---- Progress bar seek ---- */
+  if (progressBar && audio) {
     progressBar.addEventListener('click', (e) => {
+      if (!audio.duration) return;
       const rect = progressBar.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      currentTime = Math.round(pct * TOTAL_SECONDS);
-      updatePlayerUI();
+      const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      audio.currentTime = pct * audio.duration;
     });
   }
 
-  // Volume slider
-  if (volSlider) {
+  /* ---- Volume slider ---- */
+  if (volSlider && audio) {
     volSlider.addEventListener('click', (e) => {
       const rect = volSlider.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+      const pct  = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+      audio.volume = pct / 100;
       if (volFill) volFill.style.width = pct + '%';
       volSlider.setAttribute('aria-valuenow', Math.round(pct));
     });
   }
 
-  // Prev / Next buttons (no actual tracks — just reset)
+  /* ---- Prev = restart ---- */
   const prevBtn = document.querySelector('.player-prev');
   const nextBtn = document.querySelector('.player-next');
-  if (prevBtn) {
-    prevBtn.addEventListener('click', () => {
-      currentTime = 0;
-      updatePlayerUI();
-    });
-  }
-  if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
-      currentTime = 0;
-      updatePlayerUI();
-    });
-  }
+  if (prevBtn && audio) prevBtn.addEventListener('click', () => { audio.currentTime = 0; });
+  if (nextBtn)          nextBtn.addEventListener('click', () => {});
 
-  // Genre card play buttons
+  /* ---- Genre card buttons scroll to player and play ---- */
   document.querySelectorAll('.genre-play-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Scroll to featured player and start
       const player = document.querySelector('.featured-player');
       if (player) {
         player.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setTimeout(() => {
-          if (!isPlaying) startPlaying();
+          if (audio && audio.paused) {
+            audio.play().then(() => setPlayingState(true)).catch(() => {});
+          }
         }, 600);
       }
     });
   });
 
-  // Initial render
   updatePlayerUI();
 })();
 
@@ -497,45 +459,52 @@
    11. GALLERY FILTER
    ============================================================ */
 (function initGalleryFilter() {
-  const filterBtns = document.querySelectorAll('.gallery-filter-btn');
-  const galleryItems = document.querySelectorAll('.gallery-item');
-  if (!filterBtns.length || !galleryItems.length) return;
+  const filterContainer = document.querySelector('.gallery-filters');
+  if (!filterContainer) return;
 
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      // Update active button state
-      filterBtns.forEach(b => {
-        b.classList.remove('active');
-        b.setAttribute('aria-pressed', 'false');
-      });
-      btn.classList.add('active');
-      btn.setAttribute('aria-pressed', 'true');
-
-      const filter = btn.dataset.filter;
-
-      galleryItems.forEach(item => {
-        const cat = item.dataset.cat;
-        if (filter === 'all' || cat === filter) {
-          item.classList.remove('hidden-filter');
-          item.style.opacity = '0';
-          item.style.transform = 'scale(0.92)';
-          // Animate in
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              item.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-              item.style.opacity = '1';
-              item.style.transform = 'scale(1)';
-            });
-          });
-        } else {
-          item.style.transition = 'opacity 0.25s ease';
-          item.style.opacity = '0';
-          item.style.transform = 'scale(0.92)';
-          setTimeout(() => item.classList.add('hidden-filter'), 250);
-        }
-      });
+  // ── Apply a filter to ALL .gallery-item elements present at call time ──
+  function applyFilter(filter) {
+    // LIVE query — picks up items added dynamically after page load
+    const allItems = document.querySelectorAll('.gallery-item');
+    allItems.forEach(item => {
+      const cat = item.dataset.cat || '';
+      const show = filter === 'all' || cat === filter;
+      if (show) {
+        item.classList.remove('hidden-filter');
+        item.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        item.style.opacity    = '1';
+        item.style.transform  = 'scale(1)';
+        item.style.pointerEvents = 'auto';
+      } else {
+        item.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        item.style.opacity    = '0';
+        item.style.transform  = 'scale(0.92)';
+        item.style.pointerEvents = 'none';
+        setTimeout(() => item.classList.add('hidden-filter'), 260);
+      }
     });
+  }
+
+  // ── Wire existing + future filter buttons via event delegation ────
+  filterContainer.addEventListener('click', (e) => {
+    const btn = e.target.closest('.gallery-filter-btn');
+    if (!btn) return;
+
+    filterContainer.querySelectorAll('.gallery-filter-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
+    applyFilter(btn.dataset.filter || 'all');
   });
+
+  // Expose so dynamic loaders can trigger a re-apply after adding items
+  window._galleryApplyFilter = applyFilter;
+  window._galleryGetActiveFilter = () => {
+    const active = filterContainer.querySelector('.gallery-filter-btn.active');
+    return active ? (active.dataset.filter || 'all') : 'all';
+  };
 })();
 
 /* ============================================================
@@ -752,4 +721,393 @@
       }
     });
   });
+})();
+
+/* ============================================================
+   15. DYNAMIC MEDIA — load uploaded files from server API
+   ============================================================
+   Gracefully degrades: if server.py isn't running these
+   functions simply return without breaking anything.
+   ============================================================ */
+
+function apiFetch(url, ms = 4000) {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms)),
+  ]);
+}
+
+/* ── 15a. Uploaded PHOTOS → Gallery section ──────────────── */
+(function loadUploadedPhotos() {
+  const masonry = document.querySelector('.gallery-masonry');
+  if (!masonry) return;
+
+  apiFetch('/api/files?type=photos')
+    .then(r => r.json())
+    .then(files => {
+      if (!Array.isArray(files) || !files.length) return;
+
+      files.forEach(file => {
+        // Don't add duplicates
+        if (masonry.querySelector(`[data-upload-name="${CSS.escape(file.name)}"]`)) return;
+
+        const item = document.createElement('div');
+        item.className = 'gallery-item';
+        item.dataset.cat = 'photos';               // shows under "All" + any photos filter
+        item.dataset.uploadName = file.name;
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('role', 'button');
+        item.setAttribute('aria-label', `View: ${file.name.replace(/\.[^.]+$/, '')}`);
+
+        const img = document.createElement('img');
+        img.src     = file.url;
+        img.alt     = file.name.replace(/\.[^.]+$/, '');
+        img.loading = 'lazy';
+
+        const ov = document.createElement('div');
+        ov.className = 'gallery-overlay';
+        ov.setAttribute('aria-hidden', 'true');
+        ov.innerHTML = '<i class="fas fa-expand"></i>';
+
+        item.appendChild(img);
+        item.appendChild(ov);
+        masonry.appendChild(item);
+
+        // Re-apply current filter so new item is visible under "All"
+        if (window._galleryApplyFilter) {
+          window._galleryApplyFilter(window._galleryGetActiveFilter ? window._galleryGetActiveFilter() : 'all');
+        }
+
+        // Lightbox
+        const open = () => {
+          const existing = document.querySelector('.lightbox');
+          if (existing) existing.remove();
+          const lb = document.createElement('div');
+          lb.className = 'lightbox';
+          lb.setAttribute('role', 'dialog');
+          lb.setAttribute('aria-modal', 'true');
+          const close = document.createElement('button');
+          close.className = 'lightbox-close';
+          close.innerHTML = '<i class="fas fa-times"></i>';
+          close.setAttribute('aria-label', 'Close');
+          const imgEl = document.createElement('img');
+          imgEl.src = file.url;
+          imgEl.alt = file.name;
+          lb.appendChild(close);
+          lb.appendChild(imgEl);
+          document.body.appendChild(lb);
+          document.body.style.overflow = 'hidden';
+          setTimeout(() => lb.classList.add('open'), 10);
+          const closeFn = () => { lb.remove(); document.body.style.overflow = ''; };
+          close.addEventListener('click', closeFn);
+          lb.addEventListener('click', e => { if (e.target === lb) closeFn(); });
+        };
+        item.addEventListener('click', open);
+        item.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+      });
+    })
+    .catch(() => {});
+})();
+
+/* ── 15b. Uploaded VIDEOS → Videos section ───────────────── */
+(function loadUploadedVideos() {
+  const grid     = document.getElementById('videos-grid');
+  const emptyMsg = document.getElementById('videos-empty');
+  if (!grid) return;
+
+  // ── Video lightbox ──
+  const lightbox      = document.getElementById('video-lightbox');
+  const lightboxVideo = document.getElementById('lightbox-video');
+  const lightboxClose = document.getElementById('video-lightbox-close');
+
+  function openVid(url) {
+    if (!lightbox || !lightboxVideo) return;
+    lightboxVideo.src = url;
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    lightboxVideo.play().catch(() => {});
+  }
+  function closeVid() {
+    if (!lightbox || !lightboxVideo) return;
+    lightbox.classList.remove('open');
+    lightboxVideo.pause();
+    lightboxVideo.src = '';
+    document.body.style.overflow = '';
+  }
+
+  if (lightboxClose) lightboxClose.addEventListener('click', closeVid);
+  if (lightbox)      lightbox.addEventListener('click', e => { if (e.target === lightbox) closeVid(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && lightbox && lightbox.classList.contains('open')) closeVid();
+  });
+
+  // ── Fetch & render ──
+  apiFetch('/api/files?type=videos')
+    .then(r => r.json())
+    .then(files => {
+      if (!Array.isArray(files) || !files.length) return;
+
+      // Hide "no videos" message
+      if (emptyMsg) emptyMsg.style.display = 'none';
+
+      files.forEach(file => {
+        if (grid.querySelector(`[data-upload-name="${CSS.escape(file.name)}"]`)) return;
+
+        const card = document.createElement('div');
+        card.className = 'video-card reveal';
+        card.dataset.uploadName = file.name;
+
+        // Video element for thumbnail frame
+        const vid = document.createElement('video');
+        vid.className = 'video-card-thumb';
+        vid.preload   = 'metadata';
+        vid.muted     = true;
+        vid.src       = file.url + '#t=0.5';
+
+        // Play overlay
+        const playOv = document.createElement('div');
+        playOv.className = 'video-card-play';
+        playOv.innerHTML = '<div class="video-play-circle"><i class="fas fa-play"></i></div>';
+
+        // Info bar
+        const info = document.createElement('div');
+        info.className = 'video-card-info';
+        info.innerHTML = `
+          <span class="video-card-name" title="${file.name}">
+            ${file.name.replace(/\.[^.]+$/, '')}
+          </span>
+          <span class="video-card-size">${file.size_human}</span>`;
+
+        card.appendChild(vid);
+        card.appendChild(playOv);
+        card.appendChild(info);
+        grid.appendChild(card);
+
+        const openFn = () => openVid(file.url);
+        playOv.addEventListener('click', openFn);
+        vid.addEventListener('click', openFn);
+
+        // Reveal
+        setTimeout(() => card.classList.add('revealed'), 100);
+      });
+    })
+    .catch(() => {});
+})();
+
+/* ── 15c. Uploaded SONGS → Music section ─────────────────── */
+(function loadUploadedSongs() {
+  const musicSection = document.getElementById('music');
+  if (!musicSection) return;
+
+  apiFetch('/api/files?type=songs')
+    .then(r => r.json())
+    .then(files => {
+      if (!Array.isArray(files) || !files.length) return;
+
+      // Find or create the uploads track container
+      let wrapper = document.getElementById('uploaded-tracks-wrapper');
+      if (!wrapper) {
+        const container = musicSection.querySelector('.container');
+        if (!container) return;
+
+        wrapper = document.createElement('div');
+        wrapper.id        = 'uploaded-tracks-wrapper';
+        wrapper.className = 'reveal';
+        wrapper.innerHTML = `
+          <div style="margin-top:60px;margin-bottom:28px;display:flex;align-items:center;gap:16px">
+            <span style="
+              font-family:'Orbitron',sans-serif;font-size:0.68rem;
+              letter-spacing:5px;color:var(--gold);text-transform:uppercase;
+              white-space:nowrap">— MY TRACKS &amp; MIXES</span>
+            <div style="flex:1;height:1px;background:rgba(255,184,0,0.2)"></div>
+          </div>
+          <div id="uploaded-tracks-list" style="display:flex;flex-direction:column;gap:14px"></div>`;
+        container.appendChild(wrapper);
+        setTimeout(() => wrapper.classList.add('revealed'), 100);
+      }
+
+      const list = document.getElementById('uploaded-tracks-list');
+      if (!list) return;
+
+      files.forEach((file, idx) => {
+        if (list.querySelector(`[data-upload-name="${CSS.escape(file.name)}"]`)) return;
+
+        const track = document.createElement('div');
+        track.className = 'uploaded-track-card';
+        track.dataset.uploadName = file.name;
+        track.style.cssText = `
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          padding: 18px 22px;
+          display: grid;
+          grid-template-columns: 48px 1fr auto;
+          align-items: center;
+          gap: 18px;
+          transition: all 0.3s ease;
+        `;
+
+        // Number badge
+        const num = document.createElement('div');
+        num.style.cssText = `
+          width:48px;height:48px;border-radius:12px;
+          background:linear-gradient(135deg,#FF0066,#9900FF);
+          display:flex;align-items:center;justify-content:center;
+          font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:900;
+          color:#fff;flex-shrink:0;
+          box-shadow:0 0 14px rgba(255,0,102,0.4);
+        `;
+        num.textContent = String(list.children.length + 1).padStart(2, '0');
+
+        // Track info
+        const info = document.createElement('div');
+        info.style.cssText = 'min-width:0';
+        const trackName = file.name.replace(/\.[^.]+$/, '');
+        info.innerHTML = `
+          <div style="font-weight:700;font-size:0.9rem;margin-bottom:5px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${trackName}
+          </div>
+          <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);letter-spacing:1px">
+            KHUSHISOUNDLAB &nbsp;·&nbsp; ${file.size_human}
+          </div>`;
+
+        // Audio player
+        const audioWrap = document.createElement('div');
+        audioWrap.style.cssText = 'min-width:220px;max-width:280px;';
+        const audio = document.createElement('audio');
+        audio.controls    = true;
+        audio.preload     = 'none';
+        audio.src         = file.url;
+        audio.style.cssText = 'width:100%;height:32px;accent-color:#FF0066;outline:none;display:block';
+        audioWrap.appendChild(audio);
+
+        track.appendChild(num);
+        track.appendChild(info);
+        track.appendChild(audioWrap);
+
+        // Hover glow
+        track.addEventListener('mouseenter', () => {
+          track.style.borderColor  = 'rgba(255,0,102,0.4)';
+          track.style.background   = 'rgba(255,0,102,0.05)';
+          track.style.transform    = 'translateY(-2px)';
+          track.style.boxShadow    = '0 10px 30px rgba(0,0,0,0.35),0 0 16px rgba(255,0,102,0.12)';
+        });
+        track.addEventListener('mouseleave', () => {
+          track.style.borderColor  = 'rgba(255,255,255,0.08)';
+          track.style.background   = 'rgba(255,255,255,0.04)';
+          track.style.transform    = '';
+          track.style.boxShadow    = '';
+        });
+
+        // Mobile: stack audio below
+        if (window.innerWidth < 640) {
+          track.style.gridTemplateColumns = '48px 1fr';
+          audioWrap.style.gridColumn = '1 / -1';
+          audioWrap.style.minWidth   = 'unset';
+          audioWrap.style.maxWidth   = '100%';
+        }
+
+        list.appendChild(track);
+      });
+    })
+    .catch(() => {});
+})();
+
+/* ============================================================
+   16. FLOATING ADMIN BUTTON (FAB)
+   ============================================================ */
+(function initAdminFab() {
+  const toggle = document.getElementById('admin-fab-toggle');
+  const menu   = document.getElementById('admin-fab-menu');
+  if (!toggle || !menu) return;
+
+  let isOpen = false;
+
+  toggle.addEventListener('click', () => {
+    isOpen = !isOpen;
+    toggle.classList.toggle('open', isOpen);
+    menu.classList.toggle('open', isOpen);
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  // Close when clicking anywhere outside
+  document.addEventListener('click', (e) => {
+    if (isOpen && !toggle.contains(e.target) && !menu.contains(e.target)) {
+      isOpen = false;
+      toggle.classList.remove('open');
+      menu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen) {
+      isOpen = false;
+      toggle.classList.remove('open');
+      menu.classList.remove('open');
+    }
+  });
+})();
+
+/* ============================================================
+   17. LIVE SETTINGS — load from settings.json via API
+   ============================================================ */
+(function loadLiveSettings() {
+  apiFetch('/api/settings', 3000)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || typeof data !== 'object') return;
+
+      /* ── Stats ── */
+      const stats = data.stats || {};
+      const statCards = document.querySelectorAll('.about-stats .stat-card');
+
+      const map = [
+        { key: 'experience', idx: 0 },
+        { key: 'events',     idx: 1 },
+        { key: 'audience',   idx: 2 },
+      ];
+
+      map.forEach(({ key, idx }) => {
+        const s    = stats[key];
+        const card = statCards[idx];
+        if (!s || !card) return;
+
+        const numEl = card.querySelector('.stat-number');
+        const lblEl = card.querySelector('.stat-label');
+
+        if (numEl) {
+          // Update data-target so counter animation uses new value
+          numEl.dataset.target = s.value;
+          numEl.dataset.suffix = s.suffix || '';
+          numEl.textContent    = s.value + (s.suffix || '');
+        }
+        if (lblEl) lblEl.textContent = s.label || '';
+      });
+
+      /* ── Bio text ── */
+      if (data.about && data.about.bio) {
+        const bioEl = document.querySelector('.about-description');
+        if (bioEl) bioEl.textContent = data.about.bio;
+      }
+
+      /* ── Location badge ── */
+      if (data.about && data.about.location) {
+        const locEl = document.querySelector('.badge-location span:last-child, .badge-location');
+        if (locEl) {
+          const txt = locEl.childNodes[locEl.childNodes.length - 1];
+          if (txt && txt.nodeType === 3) txt.textContent = data.about.location;
+        }
+      }
+
+      /* ── Genres footer/hero ── */
+      if (data.genres) {
+        document.querySelectorAll('.footer-genres-tag, .hero-genres').forEach(el => {
+          if (el) el.textContent = data.genres;
+        });
+      }
+    })
+    .catch(() => {}); // fail silently if server not running
 })();
