@@ -4,6 +4,19 @@
 
 ---
 
+## 📸 Preview
+
+<div align="center">
+
+![DJ Khushi Portfolio](https://raw.githubusercontent.com/Mankhushi/dj-portfolio/main/dj-khushi-mixing.png)
+
+### *"Music. Energy. Good Vibes."*
+### 🎵 ELECTRONIC • AFRO HOUSE • TECH HOUSE • BOLLYWOOD
+
+</div>
+
+---
+
 ## 👩‍🎤 About
 
 **DJ Khushi** is a Mumbai-based DJ and music enthusiast crafting energetic, unforgettable experiences through sound — from Electronic and Afro House to Tech House and Bollywood.
