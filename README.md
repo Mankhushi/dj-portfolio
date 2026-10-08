@@ -2,6 +2,8 @@
 
 > A full-stack DJ portfolio website with admin panel, file uploads, and live audio player.
 
+🌐 **Live Demo:** [https://mankhushi.github.io/dj-portfolio/](https://mankhushi.github.io/dj-portfolio/)
+
 ---
 
 ## 📸 Preview
