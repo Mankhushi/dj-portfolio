@@ -2,7 +2,9 @@
 
 > A full-stack DJ portfolio website with admin panel, file uploads, and live audio player.
 
-🌐 **Live Demo:** [https://mankhushi.github.io/dj-portfolio/](https://mankhushi.github.io/dj-portfolio/)
+🌐 **Live Demo (Vercel):** [https://dj-portfolio-topaz.vercel.app](https://dj-portfolio-topaz.vercel.app)
+
+🌐 **Live Demo (GitHub Pages):** [https://mankhushi.github.io/dj-khushisoundlab/](https://mankhushi.github.io/dj-khushisoundlab/)
 
 ---
 
