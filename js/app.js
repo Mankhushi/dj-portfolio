@@ -730,6 +730,19 @@
    functions simply return without breaking anything.
    ============================================================ */
 
+// Static fallback data when Python backend is not running (e.g. Vercel)
+let _staticData = null;
+async function getStaticData() {
+  if (_staticData) return _staticData;
+  try {
+    const r = await fetch('/static-data.json');
+    _staticData = await r.json();
+  } catch (e) {
+    _staticData = { songs: [], photos: [], videos: [] };
+  }
+  return _staticData;
+}
+
 function apiFetch(url, ms = 4000) {
   return Promise.race([
     fetch(url),
@@ -737,13 +750,26 @@ function apiFetch(url, ms = 4000) {
   ]);
 }
 
+// API fetch with static fallback for Vercel/static hosting
+async function apiFetchWithFallback(url, type) {
+  try {
+    const r = await apiFetch(url);
+    if (!r.ok) throw new Error('not ok');
+    const data = await r.json();
+    if (Array.isArray(data) && data.length > 0) return data;
+    throw new Error('empty');
+  } catch (e) {
+    const sd = await getStaticData();
+    return sd[type] || [];
+  }
+}
+
 /* ── 15a. Uploaded PHOTOS → Gallery section ──────────────── */
 (function loadUploadedPhotos() {
   const masonry = document.querySelector('.gallery-masonry');
   if (!masonry) return;
 
-  apiFetch('/api/files?type=photos')
-    .then(r => r.json())
+  apiFetchWithFallback('/api/files?type=photos', 'photos')
     .then(files => {
       if (!Array.isArray(files) || !files.length) return;
 
@@ -842,8 +868,7 @@ function apiFetch(url, ms = 4000) {
   });
 
   // ── Fetch & render ──
-  apiFetch('/api/files?type=videos')
-    .then(r => r.json())
+  apiFetchWithFallback('/api/files?type=videos', 'videos')
     .then(files => {
       if (!Array.isArray(files) || !files.length) return;
 
@@ -899,8 +924,7 @@ function apiFetch(url, ms = 4000) {
   const musicSection = document.getElementById('music');
   if (!musicSection) return;
 
-  apiFetch('/api/files?type=songs')
-    .then(r => r.json())
+  apiFetchWithFallback('/api/files?type=songs', 'songs')
     .then(files => {
       if (!Array.isArray(files) || !files.length) return;
 
